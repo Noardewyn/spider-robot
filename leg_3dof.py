@@ -3,8 +3,7 @@ from joint import Joint
 import math
 import time
 from typing import Tuple
-import threading
-from tkinter import *
+
 
 class Leg3DOF(ILeg):
     '''
@@ -31,13 +30,6 @@ class Leg3DOF(ILeg):
         self.tibia_length = tibia_length
         self.position = [0.0, 0.0, 0.0]
         self.joints = joints
-        self.__angle_changed
-        self.__change_handler_thread = threading.Thread(target=change_handler, daemon=True)
-
-    def change_handler(self):
-        condition.acquire()
-        condition.wait()
-        condition.release()
 
     def relax(self):
         for joint in self.joints:
@@ -60,8 +52,12 @@ class Leg3DOF(ILeg):
     def move_instantly(self, x: float, y: float, z: float):
         next_angles = [0, 0, 0]
 
-        hypotenuse = math.sqrt(x ** 2 + abs(y) ** 2)
-        # print(hypotenuse)
+        distance = 0
+
+        if x != 0 and y != 0:
+             distance = math.sqrt(abs(x) ** 2 + abs(y) ** 2)
+        else:
+            distance = abs(x) + abs(y)
 
         if y != 0:
             atan_a = math.atan(abs(x) / abs(y))
@@ -69,28 +65,31 @@ class Leg3DOF(ILeg):
         else:
             next_angles[0] = 90
 
-        # print("next_angles[0]1 " + str(next_angles[0]))
         next_angles[0] = 180 - next_angles[0] if y > 0 else next_angles[0]
 
-        # print("next_angles[0]2 " + str(next_angles[0]))
+        if z == 0:
+            cos_b = (distance ** 2 + self.femur_length ** 2 - self.tibia_length ** 2) / (
+                        2 * distance * self.femur_length)
+            cos_c = (self.femur_length ** 2 + self.tibia_length ** 2 - distance ** 2) / (
+                        2 * self.tibia_length * self.femur_length)
 
-        cos_b = (hypotenuse ** 2 + self.femur_length ** 2 - self.tibia_length ** 2) / (2 * hypotenuse * self.femur_length)
-        cos_c = (self.femur_length ** 2 + self.tibia_length ** 2 - hypotenuse ** 2) / (2 * self.tibia_length * self.femur_length)
+            next_angles[1] = 90 - math.degrees(math.acos(cos_b))
+            next_angles[2] = math.degrees(math.acos(cos_c))
+        else:
+            hypotenuse = math.sqrt(abs(distance) ** 2 + abs(z) ** 2)
+            cos_b = (hypotenuse ** 2 + self.femur_length ** 2 - self.tibia_length ** 2) / (
+                        2 * hypotenuse * self.femur_length)
+            cos_c = (self.femur_length ** 2 + self.tibia_length ** 2 - hypotenuse ** 2) / (
+                        2 * self.tibia_length * self.femur_length)
 
-        next_angles[1] = abs(math.degrees(math.acos(cos_b)))
-        next_angles[2] = abs(math.degrees(math.acos(cos_c)))
+            if z > 0:
+                cos_d = distance / hypotenuse
+                next_angles[1] = 90 - (math.degrees(math.acos(cos_b)) + math.degrees(math.acos(cos_d)))
+            else:
+                cos_d = abs(z) / hypotenuse
+                next_angles[1] = 180 - (math.degrees(math.acos(cos_b)) + math.degrees(math.acos(cos_d)))
 
-        # print("next_angles[1] " + str(next_angles[1]))
-        # print("next_angles[2] " + str(next_angles[2]))
-
-        height_offset_angle = 90 - math.degrees(math.acos(z / hypotenuse))
-        # print("height_offset_angle " + str(height_offset_angle))
-
-        next_angles[1] = 90 - next_angles[1] + height_offset_angle
-        next_angles[2] = next_angles[2]
-
-        # print("next_angles[1] " + str(next_angles[1]))
-        # print("next_angles[2] " + str(next_angles[2]))
+            next_angles[2] = math.degrees(math.acos(cos_c))
 
         self.__set_joints_angles(next_angles[0], next_angles[1], next_angles[2])
 
@@ -110,4 +109,4 @@ class Leg3DOF(ILeg):
             self.__set_joint_angle(joint_index, self.__get_joint_angle(joint_index) + step)
 
     def move_timed(self, x: float, y: float, z: float, time_to_rotate: float):
-        self.move_joint_timed(0, 3, time_to_rotate)
+        pass
