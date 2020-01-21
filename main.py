@@ -1,11 +1,12 @@
 from spider import Spider
 from leg_3dof import Leg3DOF
 from joint import Joint
-from test_servo import Servo
+from servo import Servo
+import time
 
 coxa_length = 1
 femur_length = 4
-tibia_length = 5
+tibia_length = 6.1
 
 
 def build_joint(joint_id: id, reverse_direction: int):
@@ -16,16 +17,16 @@ def build_joint(joint_id: id, reverse_direction: int):
 
 def build_spider():
 
-    joints = (build_joint(0, True), build_joint(1, True), build_joint(2, True))
+    joints = (build_joint(0, False), build_joint(1, False), build_joint(2, False))
     front_left_leg = Leg3DOF(coxa_length, femur_length, tibia_length, joints)
 
-    joints = (build_joint(4, False), build_joint(5, False), build_joint(6, False))
+    joints = (build_joint(4, True), build_joint(5, True), build_joint(6, True))
     front_right_leg = Leg3DOF(coxa_length, femur_length, tibia_length, joints)
 
-    joints = (build_joint(8, True), build_joint(9, False), build_joint(10, False))
+    joints = (build_joint(8, False), build_joint(9, True), build_joint(10, True))
     back_left_leg = Leg3DOF(coxa_length, femur_length, tibia_length, joints)
 
-    joints = (build_joint(12, False), build_joint(13, True), build_joint(14, True))
+    joints = (build_joint(12, True), build_joint(13, False), build_joint(14, False))
     back_right_leg = Leg3DOF(coxa_length, femur_length, tibia_length, joints)
 
     spider = Spider((front_left_leg, front_right_leg, back_left_leg, back_right_leg))
@@ -35,8 +36,11 @@ def build_spider():
 
 def main():
     spider = build_spider()
-    # spider.get_leg(0).move_instantly(5, 5, 0)
-    spider.get_leg(1).move_timed(5, 0, 0, 3)
+    spider.stand_pose()
+    time.sleep(1)
+    spider.get_leg(1).move_instantly(2, 6, -4)
+    time.sleep(1)
+    spider.relax()
 
 
 if __name__ == "__main__":
