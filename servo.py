@@ -12,7 +12,6 @@ class Servo(IServo):
     max_pulse = 500
     min_pulse = 2600
 
-    '''Test implementation of servo'''
     def __init__(self, servo_id: int, debug_log: bool = False):
         self._servo_id = servo_id
         self._angle = 0
@@ -24,6 +23,9 @@ class Servo(IServo):
         self._driver.angle = angle
         if self._debug_log:
             print('servo [{0}] moved to {1}'.format(self._servo_id, self._angle))
+
+    def get_angle(self):
+        return self._angle
 
     def relax(self):
         self._driver.angle = None

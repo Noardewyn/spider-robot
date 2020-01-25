@@ -14,6 +14,9 @@ class Servo(IServo):
         if self._debug_log:
             print('servo [{0}] moved to {1}'.format(self._servo_id, self._angle))
 
+    def get_angle(self):
+        return self._angle
+
     def relax(self):
         if self._debug_log:
             print('servo [{0}] relaxed'.format(self._servo_id))
