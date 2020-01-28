@@ -30,6 +30,8 @@ class Leg3DOF(ILeg):
         self.femur_length = femur_length
         self.tibia_length = tibia_length
         self._joints = joints
+        self._actual_position = [0, 0, 0]
+        self._next_position = [0, 0, 0]
 
     def relax(self):
         for joint in self._joints:
@@ -41,10 +43,29 @@ class Leg3DOF(ILeg):
     def __set_joint_angle(self, index: int, angle: int):
         self._joints[index].set_angle(angle)
 
+    def get_actual_position(self):
+        return self._actual_position
+
+    def get_next_position(self):
+        return self._next_position
+
+    def __set_next_position(self, x: float, y: float, z: float):
+        self._next_position = (x, y, z)
+
+    def __set_actual_position(self, x: float, y: float, z: float):
+        self._actual_position = (x, y, z)
+
     def move_joints(self):
-        self._joints[0].move()
-        self._joints[1].move()
-        self._joints[2].move()
+        [joint.move() for joint in self._joints]
+        self._actual_position = self._next_position
+
+    def shift(self, x_offset: float, y_offset: float, z_offset: float):
+        current_position = self.get_actual_position()
+        print("current_pos: ", current_position)
+        print("next_pos: ", self.get_next_position())
+        print(x_offset, y_offset, z_offset)
+
+        self.set_xyz_position(current_position[0] + x_offset, current_position[1] + y_offset, current_position[2] + z_offset)
 
     def __set_joints_angles(self, a: int, b: int, c: int):
         if a is not None:
@@ -54,8 +75,8 @@ class Leg3DOF(ILeg):
         if c is not None:
             self._joints[2].set_angle(c)
 
-    def step(self, x, y, down_height, delay=0.3):
-        self.move_to_xyz_instantly(x, y, 2)
+    def step(self, x: float, y: float, down_height: float, up_height: float = 0, delay: float = 0.4):
+        self.move_to_xyz_instantly(x, y, up_height)
         time.sleep(delay)
         self.move_to_xyz_instantly(x, y, down_height)
 
@@ -119,10 +140,12 @@ class Leg3DOF(ILeg):
     def set_xyz_position(self, x: float, y: float, z: float):
         next_angles = self.calculate_xyz_position(x, y, z)
         self.__set_joints_angles(next_angles[0], next_angles[1], next_angles[2])
+        self.__set_next_position(x, y, z)
 
     def move_to_xyz_instantly(self, x: float, y: float, z: float):
         self.set_xyz_position(x, y, z)
         self.move_joints()
+        self.__set_actual_position(x, y, z)
 
     def move_to_xyz_timed(self, x: float, y: float, z: float, time_to_rotate: float):
         current_angles = [joint.get_angle() for joint in self._joints]

@@ -25,5 +25,9 @@ class ILeg:
         """move leg to pointed dot in space for the specified time"""
 
     @abstractmethod
-    def step(self, x, y, down_height, delay=0.2):
+    def step(self, x: float, y: float, down_height: float, up_height: float, delay: float):
         """up leg then down to specified point"""
+
+    @abstractmethod
+    def shift(self, x_offset: float, y_offset: float, z_offset: float):
+        """leg shift for the specified offsets"""
