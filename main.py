@@ -37,10 +37,11 @@ def build_spider():
 def main():
     spider = build_spider()
 
-    spider.get_leg(1).move_to_xyz_instantly(3, 0, -7)
+    spider.prepare_to_walk()
+
     time.sleep(2)
-    for i in range(3):
-        spider.creep_walk()
+    for i in range(6):
+        spider.turn_left()
 
     time.sleep(5)
     spider.relax()

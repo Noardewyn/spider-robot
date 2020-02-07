@@ -9,8 +9,21 @@ def delay(t):
 
 
 class Spider:
-    def __init__(self, legs: Tuple[ILeg, ILeg, ILeg, ILeg]):
+    def __init__(self, legs: Tuple[ILeg, ILeg, ILeg, ILeg], z_position=0):
         self.legs = legs
+        self.z_position = z_position
+        self._current_side = 0
+        self._legs_wide_x = 2.5
+        self._legs_wide_y = 2
+        self._legs_narrowly_x = 2.5
+        self._legs_narrowly_y = -0.5
+        self._legs_rotate_x = 0.5
+        self._legs_rotate_y = 2
+        self._shift_size = self._legs_wide_y + abs(self._legs_narrowly_y)
+        self._down_heigth = -6
+        self._up_height = -4
+        self.delay_between_steps = 0.8
+        self.step_delay = 0.15
 
     def relax(self):
         for leg in self.legs:
@@ -25,78 +38,166 @@ class Spider:
         self.get_leg(2).move_joints()
         self.get_leg(3).move_joints()
 
-    def stand_pose(self, x_distance: float = 2.5, y_distance: float = 2.5, height=-4):
-
+    def stand_pose(self, x_distance: float = 4, y_distance: float = 4, height=-4):
+        self.z_position = height
         self.get_leg(0).set_xyz_position(-x_distance, y_distance, height)
         self.get_leg(1).set_xyz_position(x_distance, y_distance, height)
         self.get_leg(2).set_xyz_position(-x_distance, -y_distance, height)
         self.get_leg(3).set_xyz_position(x_distance, -y_distance, height)
         self.move_legs()
 
-    def up_down_animation(self, delay, step):
-        for height in numpy.arange(-6, -3, step):
-            self.stand_pose(3, height)
-            time.sleep(delay)
+    def lift_to(self, new_z_position: float, x_distance: float, delay_time: float, step: float):
+        step = -step if self.z_position > new_z_position else step
+        for height in numpy.arange(self.z_position, new_z_position,  step):
+            self.stand_pose(x_distance, x_distance, height)
+            time.sleep(delay_time)
 
-        for height in numpy.arange(-3, -6, -step):
-            self.stand_pose(3, height)
-            time.sleep(delay)
+    def up_down_animation(self, delay_time: float, step: float):
+        self.lift_to(-7, delay_time, step)
+        self.lift_to(-3, delay_time, step)
 
     def shift(self, x_offset: float, y_offset: float, z_offset: float):
 
-        self.get_leg(0).shift(x_offset, y_offset, z_offset)
-        self.get_leg(1).shift(x_offset, y_offset, z_offset)
-        self.get_leg(2).shift(x_offset, y_offset, z_offset)
-        self.get_leg(3).shift(x_offset, y_offset, z_offset)
+        self.get_leg(0).shift( x_offset,  y_offset, z_offset)
+        self.get_leg(1).shift( x_offset,  y_offset, z_offset)
+        self.get_leg(2).shift(-x_offset,  y_offset, z_offset)
+        self.get_leg(3).shift(-x_offset,  y_offset, z_offset)
         self.move_legs()
 
-    def creep_walk(self):
+    def __change_wide_side(self):
+        if self._current_side == 0:
+            self._current_side = 1
+        elif self._current_side == 1:
+            self._current_side = 0
 
-        step_distance_factor = 0.5
+    def prepare_to_walk(self):
+        if self._current_side == 0:
+            self.get_leg(0).set_xyz_position(-self._legs_wide_x, self._legs_wide_y, self._down_heigth)
+            self.get_leg(1).set_xyz_position(self._legs_narrowly_x, self._legs_narrowly_y, self._down_heigth)
+            self.get_leg(2).set_xyz_position(-self._legs_wide_x, -self._legs_wide_y, self._down_heigth)
+            self.get_leg(3).set_xyz_position(self._legs_narrowly_x, -self._legs_narrowly_y, self._down_heigth)
+        elif self._current_side == 1:
+            self.get_leg(0).set_xyz_position(-self._legs_narrowly_x, self._legs_narrowly_y, self._down_heigth)
+            self.get_leg(1).set_xyz_position(self._legs_wide_x, self._legs_wide_y, self._down_heigth)
+            self.get_leg(2).set_xyz_position(-self._legs_narrowly_x, -self._legs_narrowly_y, self._down_heigth)
+            self.get_leg(3).set_xyz_position(self._legs_wide_x, -self._legs_wide_y, self._down_heigth)
 
-        delay_between_steps = 0.8
-        down_height = -7
-        up_height = -5
+        self.move_legs()
 
-        step_delay = 0.1
-        stand_leg_distance_x = 4 #3
-        stand_leg_distance_y = 4 * step_distance_factor #2
-        shift_distance_y = -4 * step_distance_factor
+    def move_forward(self):
+        if self._current_side == 0:
+            self.get_leg(1).step(self._legs_wide_x, self._legs_wide_y + self._shift_size, self._down_heigth, self._up_height, self.step_delay)
+            delay(self.delay_between_steps)
 
-        small_step_distance_y = 3 * step_distance_factor #1
-        long_step_distance_y = 11 * step_distance_factor #4
+            self.shift(0, -self._shift_size, 0)
+            delay(self.delay_between_steps)
 
-        self.stand_pose(stand_leg_distance_x, stand_leg_distance_y, down_height)
+            self.get_leg(2).step(-self._legs_narrowly_x, -self._legs_narrowly_y, self._down_heigth, self._up_height, self.step_delay)
+            delay(self.delay_between_steps)
 
-        delay(1)
+        elif self._current_side == 1:
+            self.get_leg(0).step(-self._legs_wide_x, self._legs_wide_y + self._shift_size, self._down_heigth, self._up_height, self.step_delay)
+            delay(self.delay_between_steps)
 
-        self.get_leg(3).step(stand_leg_distance_x, small_step_distance_y, down_height, up_height, step_delay)
-        delay(delay_between_steps)
+            self.shift(0, -self._shift_size, 0)
+            delay(self.delay_between_steps)
 
-        self.get_leg(1).step(stand_leg_distance_x, long_step_distance_y, down_height, up_height, step_delay)
-        delay(delay_between_steps)
+            self.get_leg(3).step(self._legs_narrowly_x, -self._legs_narrowly_y, self._down_heigth, self._up_height, self.step_delay)
+            delay(self.delay_between_steps)
 
-        # self.get_leg(0).set_xyz_position(-stand_leg_distance_x, -small_step_distance_y, down_height)
-        # self.get_leg(1).set_xyz_position(stand_leg_distance_x,  stand_leg_distance_y, down_height)
-        # self.get_leg(2).set_xyz_position(-stand_leg_distance_x, -long_step_distance_y, down_height)
-        # self.get_leg(3).set_xyz_position(stand_leg_distance_x, -stand_leg_distance_y, down_height)
-        # self.move_legs()
+        self.__change_wide_side()
 
-        self.shift(0, shift_distance_y, 0)
+    def move_backward(self):
+        if self._current_side == 0:
 
-        delay(delay_between_steps)
+            self.get_leg(3).step(self._legs_wide_x, -(self._legs_wide_y + self._shift_size), self._down_heigth, self._up_height, self.step_delay)
+            delay(self.delay_between_steps)
 
-        self.get_leg(2).step(-stand_leg_distance_x, small_step_distance_y, down_height, up_height, step_delay)
-        delay(delay_between_steps)
+            self.shift(0, self._shift_size, 0)
+            delay(self.delay_between_steps)
 
-        self.get_leg(0).step(-stand_leg_distance_x, long_step_distance_y, down_height, up_height, step_delay)
-        delay(delay_between_steps)
+            self.get_leg(0).step(-self._legs_narrowly_x, self._legs_narrowly_y, self._down_heigth, self._up_height, self.step_delay)
+            delay(self.delay_between_steps)
 
-        # self.get_leg(0).set_xyz_position(-stand_leg_distance_x, stand_leg_distance_x, down_height)
-        # self.get_leg(1).set_xyz_position(stand_leg_distance_x,  -small_step_distance_y, down_height)
-        # self.get_leg(2).set_xyz_position(-stand_leg_distance_x, -stand_leg_distance_x, down_height)
-        # self.get_leg(3).set_xyz_position(stand_leg_distance_x, -long_step_distance_y, down_height)
-        # self.move_legs()
-        self.shift(0, shift_distance_y, 0)
+        elif self._current_side == 1:
+            self.get_leg(2).step(-self._legs_wide_x, -(self._legs_wide_y + self._shift_size), self._down_heigth, self._up_height, self.step_delay)
+            delay(self.delay_between_steps)
 
-        delay(delay_between_steps)
+            self.shift(0, self._shift_size, 0)
+            delay(self.delay_between_steps)
+
+            self.get_leg(1).step(self._legs_narrowly_x, self._legs_narrowly_y, self._down_heigth, self._up_height, self.step_delay)
+            delay(self.delay_between_steps)
+
+        self.__change_wide_side()
+
+    def turn_left(self):
+
+        if self._current_side == 0:
+            self.get_leg(1).move_to_xyz_instantly(self._legs_wide_x, self._legs_wide_y, self._up_height)
+            delay(self.delay_between_steps)
+
+            self.get_leg(0).set_xyz_position(self._legs_rotate_x, self._legs_rotate_y, self._down_heigth)
+            self.get_leg(2).set_xyz_position(-self._legs_narrowly_x, -self._legs_narrowly_y, self._down_heigth)
+            self.get_leg(3).set_xyz_position(self._legs_wide_x, -self._legs_wide_y, self._down_heigth)
+            self.get_leg(1).set_xyz_position(self._legs_wide_x, self._legs_wide_y, self._down_heigth)
+            self.move_legs()
+
+            # self.get_leg(1).move_to_xyz_instantly(self._legs_wide_x, self._legs_wide_y, self._down_heigth)
+            delay(self.delay_between_steps)
+
+            self.get_leg(0).step(-self._legs_narrowly_x, self._legs_narrowly_y, self._down_heigth, self._up_height, self.step_delay)
+            delay(self.delay_between_steps)
+
+        elif self._current_side == 1:
+            self.get_leg(2).move_to_xyz_instantly(-self._legs_wide_x, -self._legs_wide_y, self._up_height)
+            delay(self.delay_between_steps)
+
+            self.get_leg(0).set_xyz_position(-self._legs_wide_x, self._legs_wide_y, self._down_heigth)
+            self.get_leg(1).set_xyz_position(self._legs_narrowly_x, self._legs_narrowly_y, self._down_heigth)
+            self.get_leg(3).set_xyz_position(-self._legs_rotate_x, -self._legs_rotate_y, self._down_heigth)
+            self.get_leg(2).set_xyz_position(-self._legs_wide_x, -self._legs_wide_y, self._down_heigth)
+            self.move_legs()
+
+            # self.get_leg(2).move_to_xyz_instantly(-self._legs_wide_x, -self._legs_wide_y, self._down_heigth)
+            delay(self.delay_between_steps)
+
+            self.get_leg(3).step(self._legs_narrowly_x, -self._legs_narrowly_y, self._down_heigth, self._up_height, self.step_delay)
+            delay(self.delay_between_steps)
+
+        self.__change_wide_side()
+
+    def turn_right(self):
+        if self._current_side == 0:
+            self.get_leg(3).move_to_xyz_instantly(self._legs_wide_x, -self._legs_wide_y, self._up_height)
+            delay(self.delay_between_steps)
+
+            self.get_leg(0).set_xyz_position(-self._legs_narrowly_x, self._legs_narrowly_y, self._down_heigth)
+            self.get_leg(1).set_xyz_position(self._legs_wide_x, self._legs_wide_y, self._down_heigth)
+            self.get_leg(2).set_xyz_position(self._legs_rotate_x, -self._legs_rotate_y, self._down_heigth)
+            self.get_leg(3).set_xyz_position(self._legs_wide_x, -self._legs_wide_y, self._down_heigth)
+            self.move_legs()
+
+            # self.get_leg(3).move_to_xyz_instantly(self._legs_wide_x, -self._legs_wide_y, self._down_heigth)
+            delay(self.delay_between_steps)
+
+            self.get_leg(2).step(-self._legs_narrowly_x, -self._legs_narrowly_y, self._down_heigth, self._up_height, self.step_delay)
+            delay(self.delay_between_steps)
+
+        elif self._current_side == 1:
+            self.get_leg(0).move_to_xyz_instantly(-self._legs_wide_x, self._legs_wide_y, self._up_height)
+            delay(self.delay_between_steps)
+
+            self.get_leg(1).set_xyz_position(-self._legs_rotate_x, self._legs_rotate_y, self._down_heigth)
+            self.get_leg(2).set_xyz_position(-self._legs_wide_x, -self._legs_wide_y, self._down_heigth)
+            self.get_leg(3).set_xyz_position(self._legs_narrowly_x, -self._legs_narrowly_y, self._down_heigth)
+            self.get_leg(0).set_xyz_position(-self._legs_wide_x, self._legs_wide_y, self._down_heigth)
+            self.move_legs()
+
+            # self.get_leg(0).move_to_xyz_instantly(-self._legs_wide_x, self._legs_wide_y, self._down_heigth)
+            delay(self.delay_between_steps)
+
+            self.get_leg(1).step(self._legs_narrowly_x, self._legs_narrowly_y, self._down_heigth, self._up_height, self.step_delay)
+            delay(self.delay_between_steps)
+
+        self.__change_wide_side()

@@ -13,6 +13,14 @@ class ILeg:
         """move joint to to a previously established position"""
 
     @abstractmethod
+    def get_joint_angle(self, index: int) -> int:
+        """get angle of specified leg joint, but not move"""
+
+    @abstractmethod
+    def set_joint_angle(self, index: int, angle: int):
+        """set angle of specified leg joint, but not move"""
+
+    @abstractmethod
     def set_xyz_position(self, x: float, y: float, z: float):
         """set new leg position in xyz coords"""
 

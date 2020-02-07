@@ -37,10 +37,10 @@ class Leg3DOF(ILeg):
         for joint in self._joints:
             joint.relax()
 
-    def __get_joint_angle(self, index: int) -> int:
+    def get_joint_angle(self, index: int) -> int:
         return self._joints[index].get_angle()
 
-    def __set_joint_angle(self, index: int, angle: int):
+    def set_joint_angle(self, index: int, angle: int):
         self._joints[index].set_angle(angle)
 
     def get_actual_position(self):
@@ -66,6 +66,8 @@ class Leg3DOF(ILeg):
         print(x_offset, y_offset, z_offset)
 
         self.set_xyz_position(current_position[0] + x_offset, current_position[1] + y_offset, current_position[2] + z_offset)
+
+        print("after_shift_pos: ", self.get_next_position())
 
     def __set_joints_angles(self, a: int, b: int, c: int):
         if a is not None:
