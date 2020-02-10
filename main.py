@@ -2,11 +2,13 @@ from spider import Spider
 from leg_3dof import Leg3DOF
 from joint import Joint
 from servo import Servo
+from server import Server
+
 import time
 
-coxa_length = 1
-femur_length = 4
-tibia_length = 6.1
+coxa_length = 2.8
+femur_length = 5.5
+tibia_length = 8
 
 
 def build_joint(joint_id: id, reverse_direction: int):
@@ -36,15 +38,11 @@ def build_spider():
 
 def main():
     spider = build_spider()
-
     spider.prepare_to_walk()
-
-    time.sleep(2)
-    for i in range(6):
-        spider.turn_left()
-
-    time.sleep(5)
+    server = Server(spider, 8050)
+    server.listen_loop()
     spider.relax()
+    print("done")
 
 
 if __name__ == "__main__":

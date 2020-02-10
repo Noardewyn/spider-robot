@@ -13,17 +13,23 @@ class Spider:
         self.legs = legs
         self.z_position = z_position
         self._current_side = 0
-        self._legs_wide_x = 2.5
+        self._legs_wide_x = 4
         self._legs_wide_y = 2
-        self._legs_narrowly_x = 2.5
+        self._legs_narrowly_x = 4
         self._legs_narrowly_y = -0.5
         self._legs_rotate_x = 0.5
         self._legs_rotate_y = 2
         self._shift_size = self._legs_wide_y + abs(self._legs_narrowly_y)
-        self._down_heigth = -6
-        self._up_height = -4
-        self.delay_between_steps = 0.8
+        self._down_heigth = -9
+        self._up_height = -5
+        self.delay_between_steps = 0.3
         self.step_delay = 0.15
+
+    def assembly_leg_init(self):
+        for i in range(4):
+            for j in range(3):
+                self.get_leg(i).set_joint_angle(j, 90)
+            self.get_leg(i).move_joints()
 
     def relax(self):
         for leg in self.legs:

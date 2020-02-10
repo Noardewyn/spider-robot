@@ -10,6 +10,10 @@ class ILeg:
 
     @abstractmethod
     def move_joints(self):
+        """move all leg joints to to a previously established position"""
+
+    @abstractmethod
+    def move_joint(self, index: int):
         """move joint to to a previously established position"""
 
     @abstractmethod
